@@ -579,7 +579,12 @@ class LanceurAvecFauxClaude(unittest.TestCase):
         cmd = [sys.executable, str(HERE / "run_evals.py"), "--claude", str(fake), "--model", "faux-modele",
                "--out", str(Path(tmp) / "res"), "--work-root", str(Path(tmp) / "work"), "--allow-contamination",
                "--jobs", "2", *extra]
-        full_env = dict(os.environ, FAKE_CLAUDE_LOG=str(Path(tmp) / "log.jsonl"), CLAUDECODE="1", **(env or {}))
+        # Dossier personnel temporaire : le résultat ne doit pas dépendre du ~/.claude de la machine
+        # (bloc ou plugin skill-orchestrator déjà installés y seraient vus comme une contamination).
+        home = Path(tmp) / "home"
+        (home / ".claude").mkdir(parents=True, exist_ok=True)
+        full_env = dict(os.environ, FAKE_CLAUDE_LOG=str(Path(tmp) / "log.jsonl"), CLAUDECODE="1", HOME=str(home),
+                        **(env or {}))
         return subprocess.run(cmd, capture_output=True, text=True, timeout=120, env=full_env)
 
     def test_passage_complet(self):

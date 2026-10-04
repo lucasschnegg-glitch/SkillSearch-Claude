@@ -1,7 +1,7 @@
 {
   "name": "skill-orchestrator",
   "displayName": "Orchestration des skills",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Sélectionne et combine les skills disponibles à chaque demande (question de départ à chaque mission par défaut : oui, non ou mode choix ; commande /orchestrer ; recherche Internet de skills désactivée par défaut). Contient le skill skill-orchestrator, ses scripts de recherche, d'audit et d'installation vérifiée, et un hook UserPromptSubmit qui ajoute un rappel court et repère les formulations de pilotage.",
   "author": {
     "name": "lucasschnegg-glitch"

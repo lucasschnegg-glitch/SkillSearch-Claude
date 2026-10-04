@@ -108,7 +108,7 @@ Exemples détaillés pour les deux modes, avec et sans Internet : `plugins/skill
 | Le plugin | `/plugin` > Installed > Disable (ou `claude plugin disable skill-orchestrator@skillsearch`) ; s'il vient du compte, le désactiver dans l'application | Personnaliser > Plugins > désactiver ou supprimer |
 | Les instructions persistantes | `sh install/install-claude-code.sh --uninstall` | supprimer le bloc entre `[Orchestration des skills...]` et `[Fin orchestration des skills]` |
 
-## État au 5 octobre 2026 (version 1.3.0)
+## État au 5 octobre 2026 (version 1.3.1)
 
 | Élément | État |
 |---|---|
@@ -183,6 +183,10 @@ SHA256SUMS                              empreintes du plugin et des archives
 dist/                                   archives à téléverser dans l'application
 tests/                                  tests unitaires, mesure de la recherche, banc d'essai de comportement, résultats
 ```
+
+## Changements de la version 1.3.1
+
+- **Instructions permanentes respectées** : pas de question de départ quand une autre instruction permanente désigne déjà un skill pour ce type de demande (par exemple un skill imposé pour les résumés de cours) ; Claude l'applique directement. Repéré lors d'un essai réel : la question passait avant une telle règle.
 
 ## Changements de la version 1.3.0
 
