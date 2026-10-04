@@ -27,7 +27,7 @@ check "une sauvegarde est créée" '[ "$(ls "$CLAUDE_CONFIG_DIR" | grep -c "CLAU
 sh "$installer" > /dev/null
 check "réinstallation sans doublon" '[ "$(grep -c "skill-orchestrator:start" "$target")" = 1 ]'
 
-sed -i.tmp 's/^Réglages durables : sélection = automatique/Réglages durables : sélection = choix/' "$target" && rm -f "$target.tmp"
+sed -i.tmp 's/^Réglages durables : sélection = demander/Réglages durables : sélection = choix/' "$target" && rm -f "$target.tmp"
 sh "$installer" > /dev/null
 check "la préférence durable survit à la mise à jour" 'grep -q "^Réglages durables : sélection = choix" "$target"'
 
