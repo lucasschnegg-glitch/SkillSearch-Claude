@@ -1,11 +1,16 @@
 {
   "name": "skill-orchestrator",
   "displayName": "Orchestration des skills",
-  "version": "1.1.0",
-  "description": "Sélectionne et combine les skills disponibles à chaque demande (mode automatique par défaut, mode choix sur demande, recherche Internet de skills désactivée par défaut). Contient le skill skill-orchestrator et un hook UserPromptSubmit qui rappelle la procédure à chaque message.",
+  "version": "1.3.0",
+  "description": "Sélectionne et combine les skills disponibles à chaque demande (question de départ à chaque mission par défaut : oui, non ou mode choix ; commande /orchestrer ; recherche Internet de skills désactivée par défaut). Contient le skill skill-orchestrator, ses scripts de recherche, d'audit et d'installation vérifiée, et un hook UserPromptSubmit qui ajoute un rappel court et repère les formulations de pilotage.",
   "author": {
     "name": "lucasschnegg-glitch"
   },
   "repository": "https://github.com/lucasschnegg-glitch/SkillSearch-Claude",
-  "keywords": ["skills", "orchestration", "selection", "cowork"]
+  "keywords": [
+    "skills",
+    "orchestration",
+    "selection",
+    "cowork"
+  ]
 }

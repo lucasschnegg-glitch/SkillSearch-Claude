@@ -39,11 +39,13 @@ def load_sums():
 def check_zip(archive, sums, problems):
     expected = {p[len(PLUGIN_PREFIX):]: d for p, d in sums.items() if p.startswith(PLUGIN_PREFIX)}
     with zipfile.ZipFile(archive) as zf:
-        names = {n.split("/", 1)[1]: n for n in zf.namelist() if "/" in n and not n.endswith("/")}
+        files = [n for n in zf.namelist() if "/" in n and not n.endswith("/")]
+        names = {n.split("/", 1)[1]: n for n in files}
         skill_only = "SKILL.md" in names and ".claude-plugin/plugin.json" not in names
         if skill_only:
-            expected = {p[len("skills/skill-orchestrator/"):]: d for p, d in expected.items()
-                        if p.startswith("skills/skill-orchestrator/")}
+            # Archive d'un skill seul : son dossier racine porte le nom du skill.
+            prefix = f"skills/{files[0].split('/', 1)[0]}/"
+            expected = {p[len(prefix):]: d for p, d in expected.items() if p.startswith(prefix)}
         for rel, digest in expected.items():
             if rel not in names:
                 problems.append(f"{archive.name} : fichier manquant {rel}")

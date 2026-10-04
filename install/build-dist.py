@@ -7,7 +7,8 @@ Produit dans dist/ :
   - skill-orchestrator-plugin.zip : le plugin complet (skill + hook), pour
     Personnaliser > Plugins > Ajouter > Upload plugin. Choix recommandé.
   - skill-orchestrator-skill.zip  : le skill seul, pour Personnaliser > Skills,
-    uniquement si l'ajout de plugins n'est pas possible (pas de hook dans ce cas).
+    uniquement si l'ajout de plugins n'est pas possible (pas de hook dans ce cas) ;
+  - orchestrer-skill.zip           : la commande /orchestrer seule, même cas.
 Met aussi à jour SHA256SUMS (empreintes du plugin et des archives).
 N'installe jamais les deux : le skill serait présent en double.
 """
@@ -18,6 +19,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 PLUGIN = REPO / "plugins" / "skill-orchestrator"
 SKILL = PLUGIN / "skills" / "skill-orchestrator"
+COMMAND = PLUGIN / "skills" / "orchestrer"
 DIST = REPO / "dist"
 SKIP = {"__pycache__", ".DS_Store"}
 # Date fixe : les archives restent identiques tant que le contenu ne change pas.
@@ -50,6 +52,7 @@ def main():
     DIST.mkdir(exist_ok=True)
     build(PLUGIN, DIST / "skill-orchestrator-plugin.zip", "skill-orchestrator")
     build(SKILL, DIST / "skill-orchestrator-skill.zip", "skill-orchestrator")
+    build(COMMAND, DIST / "orchestrer-skill.zip", "orchestrer")
     write_checksums()
 
 

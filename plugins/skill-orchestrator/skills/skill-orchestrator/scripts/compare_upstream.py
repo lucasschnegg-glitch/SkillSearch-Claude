@@ -72,13 +72,24 @@ def split_skill_md(text, installed=False):
     return clean, [normalize_links(l.rstrip(), installed) for l in body]
 
 
+def added_frontmatter_keys(a_bytes, b_bytes):
+    """Champs du frontmatter présents dans la copie installée (b) et absents de la source (a)."""
+    a = split_skill_md(a_bytes.decode("utf-8", "replace"))[0]
+    b = split_skill_md(b_bytes.decode("utf-8", "replace"), installed=True)[0]
+    return sorted(set(b) - set(a))
+
+
 def same_content(rel, a_bytes, b_bytes):
+    """a = version source, b = copie installée."""
     if a_bytes == b_bytes:
         return True
     if Path(rel).name == "SKILL.md" or Path(rel).suffix == ".md":
         a = split_skill_md(a_bytes.decode("utf-8", "replace"))
         b = split_skill_md(b_bytes.decode("utf-8", "replace"), installed=True)
-        # Le corps doit être identique ; dans le frontmatter, seules les valeurs communes comptent.
+        # Comparaison asymétrique : le téléversement peut retirer un champ du frontmatter,
+        # jamais en ajouter. Un champ ajouté (allowed-tools, hooks...) change le comportement.
+        if set(b[0]) - set(a[0]):
+            return False
         common = set(a[0]) & set(b[0])
         return a[1] == b[1] and all(a[0][k] == b[0][k] for k in common)
     return False
@@ -197,7 +208,7 @@ def compare_one(installed, up_dir):
             best = (score, up, theirs)
     score, up, theirs = best
     changed = sorted(f for f in mine if f in theirs and theirs[f] != mine[f]
-                     and not same_content(f, (installed / f).read_bytes(), (up / f).read_bytes()))
+                     and not same_content(f, (up / f).read_bytes(), (installed / f).read_bytes()))
     extra = sorted(f for f in mine if f not in theirs)
     missing = sorted(f for f in theirs if f not in mine)
     # Fichiers modifiés ou en plus : correspondent-ils à une version publiée plus ancienne ?
@@ -223,6 +234,10 @@ def compare_one(installed, up_dir):
                 hits = [f["message"] for f in rep.findings if f["gravite"] in ("critique", "élevée")]
             else:
                 hits = suspicious_additions(installed, up, rel)
+                if Path(rel).name == "SKILL.md":
+                    keys = added_frontmatter_keys((up / rel).read_bytes(), (installed / rel).read_bytes())
+                    if keys:
+                        hits.append("champ ajouté au frontmatter : " + ", ".join(keys))
             if hits:
                 alerts[rel] = sorted(set(hits))
     return {"statut": status, "source": str(up), "fichiers_modifies": changed, "fichiers_en_plus": extra,

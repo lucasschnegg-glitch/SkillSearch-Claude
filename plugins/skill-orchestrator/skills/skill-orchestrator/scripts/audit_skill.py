@@ -9,7 +9,8 @@ Usage :
   python3 audit_skill.py <dossier de skill> [...]        un ou plusieurs skills
   python3 audit_skill.py --catalog <dossier racine> [...]  tous les SKILL.md sous ces dossiers
   python3 audit_skill.py --json ...                       sortie JSON
-  python3 audit_skill.py --min-severity high ...          n'affiche que les alertes élevées
+  python3 audit_skill.py --min-severity élevée ...        n'affiche que les alertes élevées et critiques
+  python3 audit_skill.py --trust <dossier> ...            skill relu par l'utilisateur : gravités réduites
 
 Verdict par skill :
   ÉCHEC  au moins une alerte critique (à ne pas utiliser avant examen) ;
@@ -19,6 +20,10 @@ Verdict par skill :
 Les marqueurs de suppression (« noqa », « nosec »...) ne sont jamais pris en compte :
 leur présence est elle-même signalée, car un skill malveillant peut s'en servir pour
 se cacher d'un scanner.
+
+Ce que le skill dit de lui-même (« outil de sécurité », « scanner »...) ne réduit jamais
+une gravité : un skill malveillant peut l'écrire. Seule une décision extérieure au skill
+le fait : --trust, que l'utilisateur donne après avoir relu le skill.
 """
 
 import argparse
@@ -29,6 +34,7 @@ import shutil
 import subprocess
 import sys
 import unicodedata
+import warnings
 from pathlib import Path
 
 SEVERITIES = ["info", "moyenne", "élevée", "critique"]
@@ -196,6 +202,12 @@ def check_structure(skill_dir, report):
     allowed = meta.get("allowed-tools", "")
     if re.search(r"\bBash\b(?!\()", allowed) or "Bash(*)" in allowed:
         report.add("moyenne", "exécution", f"allowed-tools autorise Bash sans restriction : {allowed}", "SKILL.md")
+    else:
+        # Outils accordés sans confirmation qui donnent accès au réseau ou à un shell arbitraire.
+        risky = sorted(set(re.findall(r"Bash\([^)]*\b(?:curl|wget|ssh|scp|rsync|nc|sudo|rm|sh|bash|zsh|python3?|node|eval)\b[^)]*\)"
+                                      r"|\bWebFetch\b|\bWebSearch\b", allowed)))
+        if risky:
+            report.add("moyenne", "exécution", "allowed-tools accorde sans confirmation : " + ", ".join(risky), "SKILL.md")
     body = "\n".join(text.splitlines()[end + 1:])
     if len(body.strip()) < 80:
         report.add("moyenne", "fonctionnement", "corps du skill presque vide", "SKILL.md")
@@ -231,7 +243,10 @@ def check_syntax(path, rel, report):
         return
     if suffix == ".py":
         try:
-            compile(source, str(path), "exec", dont_inherit=True)
+            # Les avertissements du compilateur (séquences d'échappement...) ne concernent pas l'audit.
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                compile(source, str(path), "exec", dont_inherit=True)
         except SyntaxError as exc:
             report.add("moyenne", "fonctionnement", f"erreur de syntaxe Python ligne {exc.lineno} : {exc.msg}", rel)
     elif suffix in (".sh", ".bash") and shutil.which("bash"):
@@ -248,11 +263,13 @@ def check_syntax(path, rel, report):
 SELF_SOURCE = Path(__file__).resolve().read_bytes()
 
 
-def check_file(skill_dir, path, report, is_auditor):
+def check_file(skill_dir, path, report, trusted):
     rel = str(path.relative_to(skill_dir))
     if path.is_symlink():
-        target = os.path.realpath(path)
-        if not target.startswith(str(skill_dir.resolve())):
+        target = Path(os.path.realpath(path))
+        base = skill_dir.resolve()
+        # Comparaison par composants : « skill-evil » n'est pas dans « skill ».
+        if target != base and base not in target.parents:
             report.add("critique", "fichiers", f"lien symbolique vers l'extérieur du skill : {target}", rel)
         return
     try:
@@ -297,7 +314,7 @@ def check_file(skill_dir, path, report, is_auditor):
         code = f"U+{ord(hidden.group(0)):04X}"
         report.add("élevée", "dissimulation", f"caractère invisible ou de direction {code} (peut cacher du texte)",
                    f"{rel}:{line_of(text, hidden.start())}")
-    if not is_auditor:
+    if not trusted:
         for m in SUPPRESSION.finditer(text):
             before = text[max(0, m.start() - 3): m.start()]
             if path.suffix.lower() not in SCRIPT_SUFFIXES and any(q in before for q in QUOTES):
@@ -328,7 +345,7 @@ def check_file(skill_dir, path, report, is_auditor):
                     report.add("info", "injection", "formule d'injection citée en exemple ou en mise en garde",
                                f"{rel}:{line_of(text, m.start())}", m.group(0))
                     continue
-                if quoted or defensive or is_auditor:
+                if quoted or defensive or trusted:
                     # Un seul indice ne suffit pas : ces indices sont faciles à imiter.
                     report.add("moyenne", "injection", "formule d'injection, apparemment citée : à vérifier",
                                f"{rel}:{line_of(text, m.start())}", m.group(0))
@@ -345,7 +362,7 @@ def check_file(skill_dir, path, report, is_auditor):
                 sev = severity
                 if is_doc and severity != "info":
                     sev = SEVERITIES[max(1, SEVERITIES.index(severity) - 1)]
-                if is_auditor and sev == "critique":
+                if trusted and sev == "critique":
                     sev = "moyenne"
                 report.add(sev, "code", message, f"{rel}:{line_of(text, m.start())}", m.group(0))
         if path.suffix.lower() in SCRIPT_SUFFIXES:
@@ -363,18 +380,22 @@ def check_file(skill_dir, path, report, is_auditor):
         check_syntax(path, rel, report)
 
 
-def audit(skill_dir):
+def audit(skill_dir, trusted=False):
+    """trusted : décision de l'utilisateur (--trust), jamais déduite du contenu du skill."""
     skill_dir = Path(skill_dir)
     report = Report(skill_dir)
     text = check_structure(skill_dir, report)
     if text:
         check_references(skill_dir, text, report)
-    is_auditor = bool(re.search(r"security|sécurité|audit|scanner|threat", text[:1500], re.I)) and \
+    claims_security = bool(re.search(r"security|sécurité|audit|scanner|threat", text[:1500], re.I)) and \
         bool(re.search(r"prompt injection|injection", text, re.I))
     for path in iter_files(skill_dir):
-        check_file(skill_dir, path, report, is_auditor)
-    if is_auditor:
-        report.add("info", "contexte", "skill de sécurité : ses mentions de motifs dangereux sont attendues, gravité réduite")
+        check_file(skill_dir, path, report, trusted)
+    if trusted:
+        report.add("info", "contexte", "skill déclaré de confiance par l'utilisateur (--trust) : gravités réduites")
+    elif claims_security:
+        report.add("info", "contexte", "le skill se présente comme un outil de sécurité : ses motifs dangereux "
+                   "peuvent être des citations. Gravités maintenues ; après relecture, --trust <dossier> les réduit")
     # Dédoublonne les alertes identiques.
     seen, unique = set(), []
     for f in report.findings:
@@ -402,10 +423,13 @@ def main():
     parser.add_argument("--json", action="store_true", help="sortie JSON")
     parser.add_argument("--min-severity", choices=["info", "moyenne", "élevée", "critique"], default="moyenne",
                         help="gravité minimale affichée (défaut : moyenne)")
+    parser.add_argument("--trust", action="append", default=[], metavar="DOSSIER",
+                        help="skill relu et jugé fiable par l'utilisateur : gravités réduites (répétable)")
     args = parser.parse_args()
 
+    trusted = {Path(t).expanduser().resolve() for t in args.trust}
     dirs = list(find_skills(args.paths)) if args.catalog else [Path(p) for p in args.paths]
-    reports = [audit(d) for d in dirs]
+    reports = [audit(d, trusted=d.resolve() in trusted) for d in dirs]
     if args.json:
         json.dump([r.to_dict() for r in reports], sys.stdout, ensure_ascii=False, indent=2)
         print()

@@ -1,0 +1,31 @@
+{
+  "_comment": "Requêtes d'évaluation de find_skills.py, étiquetées à la main contre le catalogue réel de l'auteur (~1 425 skills : ~/.claude/skills et ~/.claude/plugins/cache, 04.10.2026) en lisant les descriptions, avant tout réglage du classement. 'relevant' = noms de skills acceptables (frontmatter name). 'dev' sert au réglage ; 'test' n'est regardé qu'une fois, à la fin. Les requêtes imitent ce que Claude passe au script (3 à 6 mots-clés, surtout en français). Sur un autre catalogue, ces étiquettes n'ont pas de sens.",
+  "dev": [
+    {"query": "tableur excel formules", "relevant": ["xlsx", "Excel Automation"]},
+    {"query": "rapport word graphique", "relevant": ["docx", "document-polisher"]},
+    {"query": "résumé de cours", "relevant": ["resume-cours", "course-summary"]},
+    {"query": "présentation diapositives soutenance", "relevant": ["academic-pptx", "pptx", "ppt-creator", "pptx-generator", "mck-ppt-design", "pptagent", "pptx-from-layouts", "ckm:slides", "md-slides", "ppt-generator-pro"]},
+    {"query": "base de données schéma", "relevant": ["database-designer", "database-schema-designer", "sql-database-assistant"]},
+    {"query": "tests unitaires python", "relevant": ["cs-tdd-guide", "tdd-guide", "test-driven-development"]},
+    {"query": "statistique régression modèle", "relevant": ["statsmodels", "statistical-analyst", "senior-data-scientist", "pymc"]},
+    {"query": "relire corriger texte", "relevant": ["copy-editing", "clean-user-facing-text", "academic-undetectable-writer", "humanizer", "stop-slop"]},
+    {"query": "landing page site web", "relevant": ["landing", "landing-page-generator", "epic-design", "frontend-design", "high-end-visual-design", "impeccable"]},
+    {"query": "electron app desktop typescript", "relevant": ["electron-development", "typescript-reviewer"]},
+    {"query": "flashcards quiz révision examen", "relevant": ["study-trainer", "resume-cours", "course-summary"]},
+    {"query": "lettre de motivation candidature", "relevant": ["career-ops", "tailored-resume-generator"]}
+  ],
+  "test": [
+    {"query": "diagramme flux processus", "relevant": ["figma-generate-diagram", "process-mapper", "json-canvas", "pathfinder"]},
+    {"query": "audit sécurité code vulnérabilités", "relevant": ["security-pen-testing", "senior-secops", "senior-security", "ship-gate", "security-guidance", "dependency-auditor"]},
+    {"query": "analyse de survie censure", "relevant": ["scikit-survival"]},
+    {"query": "séries temporelles prévision", "relevant": ["aeon", "statsmodels"]},
+    {"query": "inférence bayésienne MCMC", "relevant": ["pymc"]},
+    {"query": "fiche de révision cours", "relevant": ["resume-cours", "course-summary"]},
+    {"query": "convert pdf to markdown", "relevant": ["markitdown", "pdf"]},
+    {"query": "humaniser texte IA", "relevant": ["humanizer", "content-humanizer", "academic-undetectable-writer", "stop-slop", "clean-user-facing-text", "jdm-humanizer", "behuman", "remove-ai-marks"]},
+    {"query": "academic citations bibliography", "relevant": ["citation-management", "pyzotero", "litreview", "research-summarizer", "content-research-writer"]},
+    {"query": "créer un nouveau skill", "relevant": ["skill-creator", "write-a-skill", "writing-skills", "skill-share", "si-extract"]},
+    {"query": "revue de code pull request", "relevant": ["code-reviewer", "pr-review-expert", "requesting-code-review", "adversarial-reviewer", "named-persona-adversarial-review", "typescript-reviewer", "react-reviewer", "ponytail-review", "sentry-pr-code-review", "sentry-code-review", "qodo-pr-resolver", "receiving-code-review", "babysit"]},
+    {"query": "capture d'écran page web", "relevant": ["full-page-screenshot", "playwright-skill", "webapp-testing", "browser-automation"]}
+  ]
+}
