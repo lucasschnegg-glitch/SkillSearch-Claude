@@ -28,7 +28,7 @@ Aucun de ces éléments ne garantit à lui seul l'exécution à chaque message. 
 2. Dans l'application Claude : **Personnaliser > Plugins > Ajouter > Upload plugin**, puis choisis l'archive. Les libellés peuvent varier selon la version de l'application.
 3. Vérifie que le plugin est activé.
 
-Autre possibilité dans l'application, qui facilite les mises à jour : **Personnaliser > Plugins > Ajouter > Add marketplace**, avec `lucasschnegg-glitch/SkillSearch-Claude`. Le dépôt est public. L'application lit la branche par défaut du dépôt : ces fichiers doivent donc s'y trouver (voir « Branche » plus bas).
+Autre possibilité dans l'application, qui facilite les mises à jour : **Personnaliser > Plugins > Ajouter > Add marketplace**, avec `lucasschnegg-glitch/SkillSearch-Claude`. Le dépôt est public. L'application lit sa branche par défaut (voir « Branche » plus bas).
 
 Variante pour Claude Code seul :
 
@@ -37,7 +37,7 @@ Variante pour Claude Code seul :
 /plugin install skill-orchestrator@skillsearch
 ```
 
-Tant que les fichiers ne sont pas sur la branche par défaut, ajoute la branche : `/plugin marketplace add lucasschnegg-glitch/SkillSearch-Claude#claude/wizardly-fermi-zudpk1`. Depuis une copie locale, utilise `/plugin marketplace add ./SkillSearch-Claude`. Si le plugin vient aussi de ton compte, la version installée localement est prioritaire : il n'y a pas de doublon.
+Depuis une copie locale, utilise `/plugin marketplace add ./SkillSearch-Claude`. Si le plugin vient aussi de ton compte, la version installée localement est prioritaire : il n'y a pas de doublon.
 
 Ne téléverse pas en plus `dist/skill-orchestrator-skill.zip` : le skill apparaîtrait en double. Cette archive sert uniquement si ton organisation bloque l'ajout de plugins. Dans ce cas, utilise **Personnaliser > Skills > + > Create skill > Upload a skill**, sans hook. Une page d'aide mentionne une limite de 200 caractères pour la description d'un skill téléversé, une autre 1 024. La description actuelle en compte 576 : si l'import la refuse, raccourcis-la dans `SKILL.md` puis relance `python3 install/build-dist.py`.
 
@@ -97,8 +97,8 @@ Exemples détaillés pour les deux modes, avec et sans Internet : `plugins/skill
 | Élément | État |
 |---|---|
 | Fichiers du plugin, du skill, du hook, des instructions et des scripts | **Créés** dans ce dépôt. Manifeste du plugin et de la marketplace validés par `claude plugin validate --strict`. |
-| Plugin chargé dans Claude Code (dossier et archive .zip), skill reconnu, hook exécuté | **Testé** dans une session Claude Code 2.1.289 (voir `tests/RESULTATS.md`). |
-| Comportements (sélection pertinente, demande simple, mode choix, Internet désactivé, nouveau skill reconnu, nouvelle session) | **Testés** avec `claude -p`. Résultats et limites dans `tests/RESULTATS.md`. |
+| Plugin chargé dans Claude Code (dossier, archive .zip et installation depuis GitHub), skill reconnu, hook exécuté | **Testé** dans une session Claude Code 2.1.289 (voir `tests/RESULTATS.md`). |
+| Comportements (sélection pertinente, demande simple, mode choix, « aucun skill », Internet désactivé, mode choix avec Internet, nouveau skill reconnu, nouvelle session, préférence durable, rapport) | **Testés** avec `claude -p` sur Opus 5.5 et Sonnet 5.5 : 11 scénarios sur 11 réussis par modèle. Résultats et limites dans `tests/RESULTATS.md`. |
 | Installation sur ton compte (Cowork) et instructions globales | **À activer par toi** : ces réglages se font dans l'interface, je n'y ai pas accès. |
 | Bloc dans ton `~/.claude/CLAUDE.md` local | **À activer par toi** avec le script : cette session tourne dans un conteneur cloud, pas sur ta machine. |
 | Exécution du hook `UserPromptSubmit` dans Cowork | **À vérifier** : la documentation indique que les hooks des plugins se chargent dans Cowork, sans préciser les événements. Les instructions globales couvrent le cas où le hook ne s'exécute pas. |
@@ -113,7 +113,7 @@ Exemples détaillés pour les deux modes, avec et sans Internet : `plugins/skill
 
 ## Branche
 
-Le travail est sur la branche `claude/wizardly-fermi-zudpk1`. L'ajout de marketplace dans l'application, et la commande sans `#branche` dans Claude Code, lisent la branche par défaut du dépôt. Pour ces usages, fusionne la branche dans la branche par défaut. Le téléversement de l'archive .zip ne dépend pas de la branche.
+Le travail est sur la branche `claude/wizardly-fermi-zudpk1`. Comme le dépôt était vide, GitHub en a fait la branche par défaut : l'ajout de marketplace fonctionne donc tel quel. Si tu choisis plus tard une autre branche par défaut (par exemple `main`), fusionnes-y d'abord ces fichiers, ou ajoute `#claude/wizardly-fermi-zudpk1` à la commande dans Claude Code. Le téléversement de l'archive .zip ne dépend pas de la branche.
 
 ## Contenu du dépôt
 
