@@ -1,0 +1,17 @@
+{
+  "name": "skillsearch",
+  "owner": {
+    "name": "lucasschnegg-glitch"
+  },
+  "metadata": {
+    "description": "Plugins personnels pour l'orchestration des skills dans Claude Code et Cowork."
+  },
+  "plugins": [
+    {
+      "name": "skill-orchestrator",
+      "source": "./plugins/skill-orchestrator",
+      "description": "Sélection et orchestration des skills à chaque demande : skill de procédure et hook de rappel.",
+      "version": "1.0.0"
+    }
+  ]
+}

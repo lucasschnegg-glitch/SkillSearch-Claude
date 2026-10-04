@@ -1,0 +1,16 @@
+{
+  "description": "Rappel de la procédure d'orchestration des skills à chaque message, avec détection indicative des commandes en langage naturel.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/skill-reminder.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

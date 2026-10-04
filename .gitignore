@@ -1,0 +1,6 @@
+# Flux bruts des tests (volumineux) : seuls les résumés sont versionnés.
+tests/results/**/*.jsonl
+tests/results/**/*.stderr
+tests/results/**/*.files
+__pycache__/
+.DS_Store

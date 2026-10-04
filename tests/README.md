@@ -1,0 +1,19 @@
+# Tests
+
+Scénarios de validation exécutés avec `claude -p`. Chaque cas ouvre une session neuve dans un projet temporaire :
+
+- `CLAUDE.md` du projet = le bloc `instructions/claude-code-CLAUDE.md`. Il remplace ici `~/.claude/CLAUDE.md` : Claude Code charge les deux fichiers de la même manière ;
+- plugin chargé pour la session seulement avec `--plugin-dir`, donc rien n'est installé ;
+- outils autorisés limités par cas (`allowed_tools`) ; les autres sont refusés sans question.
+
+```sh
+tests/run-tests.sh                         # tous les cas, modèle claude-opus-5-5
+MODEL=claude-sonnet-5-5 tests/run-tests.sh # autre modèle
+tests/run-tests.sh mode-choix-attente      # un cas
+python3 tests/check_results.py tests/results   # revérifier sans relancer
+```
+
+- `cases.json` : prompts et critères vérifiables.
+- `check_results.py` : lit les flux `stream-json` (outils appelés, skills chargés, sortie du hook, fichiers créés, texte final).
+- `results/<modèle>/summary.json` : résumés versionnés des derniers passages.
+- `RESULTATS.md` : bilan commenté.

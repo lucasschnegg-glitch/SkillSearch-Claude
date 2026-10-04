@@ -1,0 +1,159 @@
+{
+  "description": "Scénarios de validation de skill-orchestrator, exécutés avec claude -p (voir run-tests.sh). Chaque cas démarre une session neuve.",
+  "cases": [
+    {
+      "id": "auto-pertinent",
+      "but": "Sélection automatique d'un skill pertinent, annoncée en une ligne, sans demande de validation.",
+      "prompt": "Prépare un document Word (.docx) d'une page qui présente les trois piliers de Solvabilité II, pour mes camarades de master. Enregistre-le sous solvabilite2.docx.",
+      "max_turns": 30,
+      "permission_mode": "acceptEdits",
+      "allowed_tools": "Skill Read Glob Grep Write Edit Bash",
+      "checks": {
+        "skill_invoked_any": [
+          "docx"
+        ],
+        "text_regex": "(?i)skills? retenus?",
+        "file_created_regex": "\\.docx$"
+      }
+    },
+    {
+      "id": "simple-sans-skill",
+      "but": "Aucune sélection inutile pour une demande simple.",
+      "prompt": "Combien font 17 × 23 ?",
+      "max_turns": 3,
+      "permission_mode": "default",
+      "allowed_tools": "Skill Read Glob Grep",
+      "checks": {
+        "no_skill_invoked": true,
+        "no_text_regex": "(?i)skills? retenus?",
+        "text_regex": "391"
+      }
+    },
+    {
+      "id": "mode-choix-attente",
+      "but": "En mode choix : au plus trois options, une recommandation, puis attente du choix sans produire le livrable.",
+      "prompt": "Mode choix pour cette tâche : fais-moi une présentation PowerPoint de 8 diapositives sur la réassurance pour un exposé de master.",
+      "max_turns": 15,
+      "permission_mode": "acceptEdits",
+      "allowed_tools": "Skill Read Glob Grep Write Edit Bash",
+      "checks": {
+        "no_file_created_regex": "\\.(pptx|html|md|py|js)$",
+        "text_regex": "(?i)recommand",
+        "last_line_question": true,
+        "max_option_headers": 3,
+        "no_text_regex": "(?i)(pas lu (sa|leur|la) description|que les noms|pas leurs descriptions|sans (sa|leur) description|ne connais que le nom)"
+      }
+    },
+    {
+      "id": "mode-choix-autre-formulation",
+      "but": "Mode choix déclenché par une autre formulation : options puis attente, sans produire le livrable.",
+      "prompt": "Propose-moi plusieurs skills pour rédiger une lettre de motivation pour un stage en actuariat, puis on avance.",
+      "max_turns": 15,
+      "permission_mode": "acceptEdits",
+      "allowed_tools": "Skill Read Glob Grep Write Edit Bash",
+      "checks": {
+        "no_file_created_regex": ".*",
+        "text_regex": "(?i)recommand",
+        "last_line_question": true,
+        "max_option_headers": 3,
+        "no_text_regex": "(?i)(pas lu (sa|leur|la) description|que les noms|pas leurs descriptions|sans (sa|leur) description|ne connais que le nom)"
+      }
+    },
+    {
+      "id": "aucun-skill",
+      "but": "« N'utilise aucun skill » : aucun skill chargé, même si un skill serait pertinent.",
+      "prompt": "N'utilise aucun skill pour cette tâche. Écris un paragraphe de 80 mots qui explique la réassurance proportionnelle à un étudiant de licence.",
+      "max_turns": 4,
+      "permission_mode": "default",
+      "allowed_tools": "Skill Read Glob Grep",
+      "checks": {
+        "no_skill_invoked": true,
+        "no_text_regex": "(?i)skills? retenus?",
+        "text_regex": "(?i)proportionnelle"
+      }
+    },
+    {
+      "id": "internet-desactive",
+      "but": "Option Internet désactivée par défaut : aucune recherche externe, même si aucun skill ne couvre parfaitement le besoin.",
+      "prompt": "Je dois produire un fichier BPMN 2.0 importable dans Camunda Modeler pour un processus de gestion de sinistres en six étapes. Quel skill utiliserais-tu, et comment procèderais-tu ? Ne produis pas encore le fichier.",
+      "max_turns": 12,
+      "permission_mode": "default",
+      "allowed_tools": "Skill Read Glob Grep Bash(python3:*)",
+      "checks": {
+        "no_tool_any": [
+          "WebSearch",
+          "WebFetch"
+        ],
+        "no_bash_regex": "(?i)(curl|wget|git clone|pip install|npm install)"
+      }
+    },
+    {
+      "id": "skill-nouveau-reconnu",
+      "but": "Un skill installé pendant la session est reconnu et utilisable sans redémarrage.",
+      "prompt": "Crée un skill minimal pour ce projet dans .claude/skills/tampon-latin/SKILL.md, avec le frontmatter name: tampon-latin et description: Ajoute le tampon [TAMPON-OK] à la fin de toute citation latine demandée par l'utilisateur. Le corps du skill dit : termine toujours la citation par [TAMPON-OK]. Ensuite, vérifie qu'il est bien reconnu, charge-le avec l'outil Skill et donne-moi une citation latine courte en l'appliquant.",
+      "max_turns": 15,
+      "permission_mode": "acceptEdits",
+      "allowed_tools": "Skill Read Glob Grep Write Edit Bash(mkdir:*) Bash(ls:*)",
+      "checks": {
+        "skill_invoked_any": [
+          "tampon-latin"
+        ],
+        "text_regex": "\\[TAMPON-OK\\]"
+      }
+    },
+    {
+      "id": "persistance-nouvelle-session",
+      "but": "Dans une session neuve, les réglages par défaut sont connus (instructions persistantes chargées) et le hook a injecté son rappel.",
+      "prompt": "Sans rien modifier, dis-moi en trois lignes quels sont tes réglages actuels pour la sélection des skills, la recherche Internet de skills et le niveau d'explication, et d'où tu les tiens.",
+      "max_turns": 4,
+      "permission_mode": "default",
+      "allowed_tools": "Read Glob Grep",
+      "checks": {
+        "hook_stdout_regex": "Orchestration des skills",
+        "text_regex": "(?is)(automatique).*(d[ée]sactiv)",
+        "skill_listed": "skill-orchestrator"
+      }
+    },
+    {
+      "id": "mode-choix-internet",
+      "but": "Mode choix avec Internet : présentation de candidats externes vérifiés, sans installation avant la sélection.",
+      "prompt": "Mode choix, et cherche un skill sur Internet si nécessaire : je veux un skill pour produire des fichiers BPMN 2.0 importables dans Camunda Modeler.",
+      "max_turns": 40,
+      "permission_mode": "default",
+      "allowed_tools": "Skill Read Glob Grep WebSearch WebFetch Bash(python3:*)",
+      "checks": {
+        "no_file_created_regex": ".*",
+        "text_regex": "(?i)(licence|license)",
+        "last_line_question": true
+      }
+    },
+    {
+      "id": "preference-durable",
+      "but": "Préférence durable enregistrée seulement sur demande explicite, en modifiant la seule ligne « Réglages durables ».",
+      "prompt": "Enregistre le mode choix comme réglage durable par défaut pour la sélection des skills.",
+      "max_turns": 8,
+      "permission_mode": "acceptEdits",
+      "allowed_tools": "Read Edit Glob Grep Skill",
+      "checks": {
+        "claude_md_regex": "^Réglages durables : sélection = choix ; recherche Internet = désactivée ; explications = courtes\\.$",
+        "claude_md_unchanged_outside_block": true
+      }
+    },
+    {
+      "id": "rapport-skills",
+      "but": "« Quels skills as-tu utilisés et pourquoi ? » : rapport exact sur les skills réellement chargés.",
+      "prompt": "Crée un classeur Excel budget.xlsx avec trois lignes de dépenses (loyer 900, transport 75, courses 320) et une ligne de total calculée par formule.",
+      "followup": "Quels skills as-tu utilisés et pourquoi ?",
+      "max_turns": 25,
+      "permission_mode": "acceptEdits",
+      "allowed_tools": "Skill Read Glob Grep Write Edit Bash",
+      "checks": {
+        "skill_invoked_any": [
+          "xlsx"
+        ],
+        "file_created_regex": "budget\\.xlsx$",
+        "text_regex": "(?s)xlsx.*(pourquoi|parce|pour )"
+      }
+    }
+  ]
+}
