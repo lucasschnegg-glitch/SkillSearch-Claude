@@ -22,7 +22,7 @@ Avec sélection = demander, ta première réponse à une nouvelle mission est se
 - **Non** : travail normal, sans recherche de catalogue ni annonce ; un skill évident pour le format demandé (par exemple `docx` pour un fichier .docx) reste permis.
 - Réponse ambiguë ou absente : redemande, sans commencer.
 
-La réponse vaut pour toute la mission : ne repose pas la question pour ses suites. Ne la pose pas non plus pour une demande simple, ni quand le message règle déjà la question (« mode choix », « n'utilise aucun skill », « utilise le skill X », « orchestre cette mission », commande `/orchestrer`). Avec sélection = automatique, passe directement à la procédure ; avec sélection = choix, directement au mode choix.
+La réponse vaut pour toute la mission : ne repose pas la question pour ses suites. Ne la pose pas non plus pour une demande simple, quand le message règle déjà la question (« mode choix », « n'utilise aucun skill », « utilise le skill X », « orchestre cette mission », commande `/orchestrer`), ni quand une autre instruction permanente de l'utilisateur désigne déjà un skill pour ce type de demande : applique-la directement. Avec sélection = automatique, passe directement à la procédure ; avec sélection = choix, directement au mode choix.
 
 ## Commandes en langage naturel
 
