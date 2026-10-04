@@ -2,5 +2,8 @@
 tests/results/**/*.jsonl
 tests/results/**/*.stderr
 tests/results/**/*.files
+tests/results/**/*.claude.md
+tests/results/**/meta.json
+graphify-out/
 __pycache__/
 .DS_Store
