@@ -2,6 +2,19 @@
 
 Les noms de skills ci-dessous sont illustratifs : utilise ceux qui existent réellement dans l'environnement.
 
+## 0. Question de départ (sélection = demander, réglage par défaut)
+
+> Utilisateur : Rédige un rapport Word de deux pages sur les trois piliers de Solvabilité II pour mes camarades.
+
+Réponse attendue, et rien d'autre :
+
+> Mission : j'utilise l'orchestration des skills ? **Oui** / **Non** / **Mode choix**. Je recommande « oui » : le livrable est un fichier Word, et `docx` en assurera la mise en page.
+
+- « Oui » : Claude charge `skill-orchestrator`, cherche, annonce « Skills retenus : `docx` (mise en page Word) », puis rédige.
+- « Non » : Claude rédige directement, sans recherche ni annonce ; il peut encore utiliser `docx`, évident pour un fichier .docx.
+- « Mode choix » : trois options au plus, une recommandation, puis attente (exemple 3).
+- Message suivant de la même mission (« ajoute une conclusion ») : pas de nouvelle question.
+
 ## 1. Mode automatique, demande substantielle
 
 > Utilisateur : Prépare un rapport Word de deux pages sur les résultats du trimestre à partir de ce fichier Excel.
@@ -54,12 +67,12 @@ Aucune recherche Web n'est lancée.
 
 > Utilisateur : Mode automatique avec recherche Internet. Génère un diagramme BPMN exportable vers Camunda.
 
-Déroulé attendu : recherche dans le catalogue local, puis requête générique (« Claude skill BPMN Camunda »), sources officielles d'abord, lecture complète du candidat, vérifications, installation dans `~/.claude/skills/<nom>/`, vérification de la reconnaissance, puis rapport :
+Déroulé attendu : recherche dans le catalogue local, puis requête générique (« Claude skill BPMN Camunda »), sources officielles d'abord, `git clone` dans un dossier temporaire, lecture complète du candidat sans le charger, vérifications, installation avec `install_skill.py` (audit de l'instantané, copie identique, `SOURCE.json`), vérification de la reconnaissance dans la liste des skills, puis rapport :
 
 > Skill installé : `bpmn-modeler`
 > Source : https://github.com/auteur/depot (licence MIT)
-> Version : commit `3f2a91c`
-> Emplacement : `~/.claude/skills/bpmn-modeler/`, reconnu dans cette session.
+> Version : commit `3f2a91c`, audit OK
+> Emplacement : `~/.claude/skills/bpmn-modeler/`, provenance dans `SOURCE.json`, reconnu dans cette session.
 
 Si aucun candidat ne passe les vérifications : « Aucun skill externe fiable trouvé (deux candidats écartés : licence absente, script qui télécharge un binaire). Je continue sans. »
 

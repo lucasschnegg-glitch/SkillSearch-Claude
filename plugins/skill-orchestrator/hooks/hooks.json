@@ -1,5 +1,5 @@
 {
-  "description": "Rappel de la procédure d'orchestration des skills à chaque message, avec détection indicative des commandes en langage naturel.",
+  "description": "Rappel court de la procédure d'orchestration des skills à chaque message, avec repérage neutre des formulations de pilotage (Claude interprète l'intention).",
   "hooks": {
     "UserPromptSubmit": [
       {
