@@ -6,7 +6,8 @@ Capacité persistante d'orchestration des skills pour **Claude Code** et **Cowor
 
 - **mode automatique** (par défaut) : sélection du plus petit ensemble utile, annoncée en une ligne ;
 - **mode choix** (sur demande) : jusqu'à trois options, une recommandation, puis attente de ton choix ;
-- **option Internet** (désactivée par défaut, indépendante du mode) : recherche, vérification et installation d'un skill externe.
+- **option Internet** (désactivée par défaut, indépendante du mode) : recherche, vérification et installation d'un skill externe ;
+- **contrôle des skills** (sur demande) : audit de fonctionnement et de sécurité d'un skill ou de tout le catalogue.
 
 ## Architecture
 
@@ -15,6 +16,8 @@ Capacité persistante d'orchestration des skills pour **Claude Code** et **Cowor
 | Instructions persistantes | Imposent l'analyse des skills à chaque demande et fixent les réglages durables | Bloc dans `~/.claude/CLAUDE.md` | Texte dans les instructions globales |
 | Skill `skill-orchestrator` | Procédure détaillée : sélection, mode choix, option Internet, rapport | Via le plugin | Via le plugin |
 | Hook `UserPromptSubmit` | Ajoute un rappel court à chaque message et repère les commandes en langage naturel | Via le plugin | Via le plugin (exécution à confirmer, voir « État ») |
+| `audit_skill.py` | Audit statique d'un skill : structure, fichiers cités, syntaxe des scripts, signaux de compromission | Via le plugin | Via le plugin |
+| `compare_upstream.py` | Vérifie l'origine d'un skill en le comparant à son dépôt source et à tout son historique | Via le plugin | Via le plugin |
 
 Le skill et le hook forment un seul plugin (`plugins/skill-orchestrator`). Un plugin ajouté à ton compte dans l'application est synchronisé vers Claude Code. Une seule installation couvre donc les deux applications.
 
@@ -60,6 +63,7 @@ Le script ne touche qu'au bloc compris entre les marqueurs `skill-orchestrator`,
 
 ### 4. Vérifier
 
+- Intégrité des fichiers téléchargés : `python3 install/verify-integrity.py` (ou `sha256sum -c SHA256SUMS`). Le script compare chaque fichier du plugin et le contenu des archives aux empreintes de `SHA256SUMS`. Pour vérifier un plugin déjà installé : `python3 install/verify-integrity.py --installed <dossier du plugin>`. Ces empreintes sont dans le même dépôt : elles détectent une corruption ou une modification locale, pas une modification du dépôt lui-même. Compare aussi le commit (`git rev-parse HEAD`) à celui qui t'a été communiqué.
 - Claude Code : `/plugin` (onglet Installed) liste `skill-orchestrator` ; `/hooks` montre le hook `UserPromptSubmit` ; `/memory` montre le bloc dans `~/.claude/CLAUDE.md`. Dans une session déjà ouverte, lance `/reload-plugins`.
 - Cowork : ouvre une nouvelle tâche et envoie : « Combien font 17 × 23 ? » (réponse directe, sans skill), puis « Mode choix pour cette tâche : prépare une présentation de 5 diapositives sur un sujet de ton choix. » (options, puis attente). Pour savoir si le hook s'exécute dans Cowork, demande : « As-tu reçu un rappel "[Orchestration des skills]" avec mon message ? ».
 
@@ -77,6 +81,7 @@ Rien à faire par défaut : le mode automatique s'applique. Pour piloter en lang
 | « Utilise le skill [nom]. » | ce skill est utilisé | tâche |
 | « N'utilise aucun skill pour cette tâche. » | aucun skill | tâche |
 | « Quels skills as-tu utilisés et pourquoi ? » | rapport | immédiat |
+| « Vérifie mes skills. », « Audite le skill [nom]. » | audit de fonctionnement et de sécurité, alertes lues en contexte | immédiat |
 | « Enregistre [réglage] par défaut. » | préférence durable (Claude Code : modifie la ligne « Réglages durables » ; Cowork : te donne la ligne à coller) | durable |
 
 Réglages initiaux : sélection automatique, recherche Internet désactivée, explications courtes.
@@ -96,19 +101,22 @@ Exemples détaillés pour les deux modes, avec et sans Internet : `plugins/skill
 
 | Élément | État |
 |---|---|
-| Fichiers du plugin, du skill, du hook, des instructions et des scripts | **Créés** dans ce dépôt. Manifeste du plugin et de la marketplace validés par `claude plugin validate --strict`. |
-| Plugin chargé dans Claude Code (dossier, archive .zip et installation depuis GitHub), skill reconnu, hook exécuté | **Testé** dans une session Claude Code 2.1.289 (voir `tests/RESULTATS.md`). |
-| Comportements (sélection pertinente, demande simple, mode choix, « aucun skill », Internet désactivé, mode choix avec Internet, nouveau skill reconnu, nouvelle session, préférence durable, rapport) | **Testés** avec `claude -p` sur Opus 5.5 et Sonnet 5.5 : 11 scénarios sur 11 réussis par modèle. Résultats et limites dans `tests/RESULTATS.md`. |
+| Fichiers du plugin, du skill, du hook, des instructions et des scripts | **Créés** dans ce dépôt. Manifestes validés par `claude plugin validate --strict`. Empreintes dans `SHA256SUMS`. |
+| Plugin chargé dans Claude Code (dossier, archive .zip et installation depuis GitHub), skill reconnu, hook exécuté | **Testé** dans une session Claude Code 2.1.289. |
+| Tests unitaires : hook (28 messages, négations comprises), recherche de skills, audit (29 cas), installation, intégrité | **Réussis** (`sh tests/run-unit-tests.sh`). |
+| Comportements : 25 scénarios par modèle, dont mode choix en plusieurs messages, portée d'une tâche, mot-clé trompeur, combinaison de skills, réévaluation, skill inexistant, anglais, Internet désactivé ou activé, installation, nouvelle session, préférence durable, rapport, audit à la demande | **Testés** sur Opus 5.5 et Sonnet 5.5 : tous réussis au dernier passage, après corrections. Détail et limites dans `tests/RESULTATS.md`. |
 | Installation sur ton compte (Cowork) et instructions globales | **À activer par toi** : ces réglages se font dans l'interface, je n'y ai pas accès. |
 | Bloc dans ton `~/.claude/CLAUDE.md` local | **À activer par toi** avec le script : cette session tourne dans un conteneur cloud, pas sur ta machine. |
 | Exécution du hook `UserPromptSubmit` dans Cowork | **À vérifier** : la documentation indique que les hooks des plugins se chargent dans Cowork, sans préciser les événements. Les instructions globales couvrent le cas où le hook ne s'exécute pas. |
-| Synchronisation du plugin vers l'onglet Code de l'application | **À vérifier** avec `/plugin` après l'installation. Elle est documentée pour Claude Code 2.1.273 et plus récent. |
+| Synchronisation du plugin vers l'onglet Code de l'application | **À vérifier** avec `/plugin` après l'installation (documentée pour Claude Code 2.1.273 et plus récent). |
 
 ## Points d'attention
 
 - **Catalogue très large.** Ton compte synchronise environ 530 skills. Claude Code réserve environ 1 % du contexte à la liste des skills : au-delà, il raccourcit puis retire les descriptions. C'est pourquoi la procédure prévoit une recherche par mots-clés (`SearchSkills`, `ListSkills` ou `scripts/find_skills.py`). Tu peux augmenter ce budget avec le réglage `skillListingBudgetFraction`, ou masquer des skills inutiles avec `skillOverrides`, au prix de plus de contexte consommé à chaque message.
+- **Audit de ton catalogue (4 octobre 2026).** Aucun skill malveillant ou piraté n'a été trouvé, et 410 skills sur 527 ont une origine vérifiée. Le rapport détaillé t'a été remis à part : il n'est pas versionné ici, car le dépôt est public.
 - **Skill concurrent.** Ton catalogue contient `using-superpowers`, qui impose d'invoquer des skills avant toute réponse. Il contredit la règle du plus petit ensemble suffisant. La procédure demande de ne pas l'empiler, mais le désactiver éviterait des signaux contradictoires. Je ne l'ai pas modifié.
-- **Indices du hook.** Le hook repère les commandes par mots-clés. Ce ne sont que des indices : Claude vérifie l'intention dans ton message.
+- **Indices du hook.** Le hook repère les commandes par mots-clés, négations comprises (« pas besoin du mode choix », « sans l'activer »). Ce ne sont que des indices : Claude vérifie l'intention dans ton message.
+- **Limites de l'audit.** `audit_skill.py` est une analyse statique : une alerte est un point à lire, « OK » ne prouve pas l'absence de risque. La comparaison à la source (`compare_upstream.py`) est la vérification la plus forte quand la source publique est connue.
 - **Windows.** Le hook est un script `sh`. Il nécessite Git Bash, qu'utilise normalement Claude Code sous Windows.
 
 ## Branche
@@ -128,12 +136,16 @@ plugins/skill-orchestrator/             le plugin (skill + hook)
     references/internet.md              option Internet : sources, vérifications, installation
     references/exemples.md              exemples des deux modes, avec et sans Internet
     scripts/find_skills.py              recherche locale dans le catalogue de skills
+    scripts/audit_skill.py              audit statique (fonctionnement et sécurité)
+    scripts/compare_upstream.py         vérification d'origine par comparaison aux dépôts sources
 instructions/claude-code-CLAUDE.md      bloc pour ~/.claude/CLAUDE.md
 instructions/cowork-instructions-globales.md   texte pour Cowork
 install/install-claude-code.sh          installe, met à jour ou retire le bloc CLAUDE.md
-install/build-dist.py                   reconstruit les archives de dist/
+install/build-dist.py                   reconstruit les archives de dist/ et SHA256SUMS
+install/verify-integrity.py             vérifie les fichiers et les archives avec SHA256SUMS
+SHA256SUMS                              empreintes du plugin et des archives
 dist/                                   archives à téléverser dans l'application
-tests/                                  scénarios, lanceur, vérificateur, résultats
+tests/                                  scénarios de comportement, tests unitaires (run-unit-tests.sh), résultats
 ```
 
 ## Sources officielles consultées

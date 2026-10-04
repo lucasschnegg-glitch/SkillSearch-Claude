@@ -1,6 +1,6 @@
 ---
 name: skill-orchestrator
-description: Procédure pour choisir, lire et combiner les skills disponibles. À lire au début d'une tâche substantielle (document, analyse, code, recherche, présentation, rédaction) et dès que l'utilisateur pilote les skills : « mode automatique », « mode choix », « propose-moi plusieurs skills », « je veux choisir les skills », « cherche ou installe un skill sur Internet », « désactive la recherche Internet », « utilise uniquement mes skills installés », « utilise le skill X », « n'utilise aucun skill », « quels skills as-tu utilisés et pourquoi ». Inutile pour une question simple.
+description: Procédure pour choisir, lire et combiner les skills disponibles. À lire au début d'une tâche substantielle (document, analyse, code, recherche, présentation, rédaction) et dès que l'utilisateur pilote les skills : « mode automatique », « mode choix », « propose-moi plusieurs skills », « je veux choisir les skills », « cherche ou installe un skill sur Internet », « désactive la recherche Internet », « utilise uniquement mes skills installés », « utilise le skill X », « n'utilise aucun skill », « quels skills as-tu utilisés et pourquoi », « vérifie mes skills ». Inutile pour une question simple.
 ---
 
 # Orchestration des skills
@@ -36,8 +36,9 @@ Ce ne sont pas des commandes natives de Claude : ce sont des formulations à rec
 | « N'utilise aucun skill pour cette tâche. » | Aucun skill, même pertinent | tâche |
 | « Quels skills as-tu utilisés et pourquoi ? » | Rapport (voir plus bas) | immédiat |
 | « Explique tes choix de skills en détail. » | Explications détaillées | tâche |
+| « Vérifie mes skills. », « Audite le skill [nom]. », « Ce skill est-il sûr ? » | Contrôle de fonctionnement et de sécurité (voir « Contrôle des skills ») | immédiat |
 
-Si l'utilisateur demande un skill qui n'existe pas ou ne peut pas être invoqué, dis-le en une phrase et propose l'option la plus proche.
+Si l'utilisateur demande un skill précis, cherche-le par son nom et ses variantes : le nom donné est souvent approximatif. S'il n'existe pas ou ne peut pas être invoqué, dis-le en une phrase, nomme le skill existant le plus proche avec ce qu'il apporterait, et demande si tu l'utilises. Poursuis sans skill seulement si la tâche n'en dépend pas, en le disant.
 
 ## Procédure en mode automatique
 
@@ -83,7 +84,7 @@ Une seule ligne avant de commencer, puis enchaîne sans demander de validation :
 
 > Skills retenus : `docx` (mise en page Word), `copy-editing` (relecture finale).
 
-Si aucun skill n'est retenu, n'annonce rien.
+N'y cite pas `skill-orchestrator` : c'est la procédure, pas un apport. Si aucun skill n'est retenu, n'annonce rien.
 
 ### 7. Réévaluer en cours de route
 
@@ -106,7 +107,7 @@ Quand le mode choix est actif, n'applique pas les skills dont le choix dépend a
 
 Si une seule option convient, dis-le et explique pourquoi, sans inventer d'alternative, puis demande confirmation : l'utilisateur a demandé à choisir. Si aucun skill ne convient, dis-le et propose de travailler sans skill, ou, si l'option Internet est active, de chercher des candidats externes.
 
-Le silence ou une réponse ambiguë ne vaut pas acceptation : redemande. Tu peux avancer sur les parties qui ne dépendent pas du choix (lire les fichiers fournis, rassembler les données, poser une question de cadrage) en le disant. Ne commence pas le travail qui dépend du skill choisi.
+Le silence ou une réponse ambiguë ne vaut pas acceptation : redemande. Une réponse qui apporte des informations sans désigner d'option ne vaut pas choix non plus : intègre ces informations, puis redemande l'option. Ne fais jamais dépendre le démarrage d'autre chose que d'un choix explicite (« option 2 », « ta recommandation », « choisis pour moi »). Tu peux avancer sur les parties qui ne dépendent pas du choix (lire les fichiers fournis, rassembler les données, poser une question de cadrage) en le disant. Ne commence pas le travail qui dépend du skill choisi.
 
 Un exemple de présentation figure dans `references/exemples.md`.
 
@@ -122,6 +123,28 @@ Une fois l'option activée, lis `references/internet.md` en entier avant la prem
 - vérification complète avant toute installation ;
 - en mode automatique, installe le candidat retenu dans la portée autorisée ; en mode choix, présente les candidats et attends la sélection ;
 - après installation, vérifie que le skill est reconnu et utilisable, puis indique sa source, sa version ou son commit, son emplacement et le besoin éventuel d'une nouvelle session.
+
+## Contrôle des skills
+
+Sur demande (« vérifie mes skills », « audite le skill X »), ou avant d'installer un skill externe, lance l'audit statique fourni :
+
+```
+python3 <dossier de ce skill>/scripts/audit_skill.py <dossier du skill>
+python3 <dossier de ce skill>/scripts/audit_skill.py --catalog ~/.claude/skills .claude/skills
+```
+
+Il vérifie la structure (frontmatter, fichiers cités, syntaxe des scripts) et cherche les signaux de compromission : instructions qui détournent l'agent, caractères invisibles, commentaires cachés, téléchargement puis exécution, accès aux identifiants, persistance, binaires, liens sortants, marqueurs qui masquent des lignes aux scanners. Il n'exécute aucun code du skill et ne fait aucun accès réseau.
+
+Pour vérifier l'origine (le skill a-t-il été modifié ?), clone sa source publique avec tout son historique dans un dossier temporaire, puis compare :
+
+```
+python3 <dossier de ce skill>/scripts/compare_upstream.py [--reference /mnt/skills] <dossier des dépôts clonés> <racine des skills installés>
+python3 <dossier de ce skill>/scripts/compare_upstream.py --resume <résultat.json>
+```
+
+Il compare chaque fichier à toutes les versions publiées, neutralise les seules réécritures faites au téléversement (guillemets, gabarits, liens internes) et passe les lignes ajoutées aux motifs de l'audit.
+
+Une alerte est un point à lire, pas une preuve : lis chaque alerte élevée ou critique dans son contexte (une mise en garde cite souvent la formule qu'elle combat) avant de conclure. À l'inverse, « OK » ne prouve pas l'absence de risque. Rends compte en distinguant ce qui est vérifié, ce qui est bénin après lecture et ce qui reste douteux.
 
 ## Rapport « Quels skills as-tu utilisés et pourquoi ? »
 

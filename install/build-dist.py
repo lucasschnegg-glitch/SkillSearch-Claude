@@ -8,6 +8,7 @@ Produit dans dist/ :
     Personnaliser > Plugins > Ajouter > Upload plugin. Choix recommandé.
   - skill-orchestrator-skill.zip  : le skill seul, pour Personnaliser > Skills,
     uniquement si l'ajout de plugins n'est pas possible (pas de hook dans ce cas).
+Met aussi à jour SHA256SUMS (empreintes du plugin et des archives).
 N'installe jamais les deux : le skill serait présent en double.
 """
 
@@ -35,10 +36,21 @@ def build(source, archive, top):
     print(f"{archive.relative_to(REPO)} : {len(files)} fichiers")
 
 
+def write_checksums():
+    """SHA256SUMS : empreinte de chaque fichier du plugin et des archives (format sha256sum)."""
+    import hashlib
+    paths = sorted(p for p in PLUGIN.rglob("*") if p.is_file() and not SKIP.intersection(p.parts))
+    paths += sorted(DIST.glob("*.zip"))
+    lines = [f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.relative_to(REPO).as_posix()}" for p in paths]
+    (REPO / "SHA256SUMS").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"SHA256SUMS : {len(lines)} fichiers")
+
+
 def main():
     DIST.mkdir(exist_ok=True)
     build(PLUGIN, DIST / "skill-orchestrator-plugin.zip", "skill-orchestrator")
     build(SKILL, DIST / "skill-orchestrator-skill.zip", "skill-orchestrator")
+    write_checksums()
 
 
 if __name__ == "__main__":

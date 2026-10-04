@@ -1,7 +1,7 @@
 {
   "name": "skill-orchestrator",
   "displayName": "Orchestration des skills",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Sélectionne et combine les skills disponibles à chaque demande (mode automatique par défaut, mode choix sur demande, recherche Internet de skills désactivée par défaut). Contient le skill skill-orchestrator et un hook UserPromptSubmit qui rappelle la procédure à chaque message.",
   "author": {
     "name": "lucasschnegg-glitch"

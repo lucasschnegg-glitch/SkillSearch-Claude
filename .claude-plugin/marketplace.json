@@ -11,7 +11,7 @@
       "name": "skill-orchestrator",
       "source": "./plugins/skill-orchestrator",
       "description": "Sélection et orchestration des skills à chaque demande : skill de procédure et hook de rappel.",
-      "version": "1.0.0"
+      "version": "1.1.0"
     }
   ]
 }

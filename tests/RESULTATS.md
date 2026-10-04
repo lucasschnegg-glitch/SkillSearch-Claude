@@ -1,49 +1,71 @@
 # Résultats de validation (4 octobre 2026)
 
-Environnement : session Claude Code 2.1.289 dans un conteneur cloud (Linux), avec environ 550 skills visibles (catalogue claude.ai synchronisé, skills de l'application et plugin). Modèles : `claude-opus-5-5` et `claude-sonnet-5-5`. Méthode : `tests/run-tests.sh`, une session `claude -p` neuve par cas, plugin chargé avec `--plugin-dir`, bloc d'instructions placé dans le `CLAUDE.md` du projet de test.
+Environnement : session Claude Code 2.1.289 dans un conteneur cloud (Linux), environ 550 skills visibles (catalogue claude.ai synchronisé, skills de l'application, plugin). Modèles : `claude-opus-5-5` et `claude-sonnet-5-5`. Méthode : `tests/run-tests.sh`, une session `claude -p` neuve par scénario (avec `--resume` pour les messages suivants), plugin chargé avec `--plugin-dir`, bloc d'instructions placé dans le `CLAUDE.md` du projet de test.
 
-## Vérifications techniques
+## Tests unitaires (`sh tests/run-unit-tests.sh`)
 
-| Vérification | Résultat |
-|---|---|
-| Manifeste du plugin et de la marketplace (`claude plugin validate --strict`) | réussi |
-| Plugin chargé depuis le dossier et depuis l'archive `dist/skill-orchestrator-plugin.zip` | réussi : skill `skill-orchestrator:skill-orchestrator` listé, hook exécuté |
-| Installation réelle depuis GitHub : `claude plugin marketplace add lucasschnegg-glitch/SkillSearch-Claude` puis `claude plugin install skill-orchestrator@skillsearch` | réussi : plugin activé, skill listé, hook exécuté dans une nouvelle session ; installation retirée ensuite |
-| Hook : 13 messages simulés (commandes en langage naturel, demande neutre, chemins contenant « mode choix ») | réussi : indices corrects, aucun faux positif sur les chemins |
-| Hook sous `dash`, `bash --posix` et `bash` | réussi |
-| Désactivation du rappel par `SKILL_ORCHESTRATOR_HOOK=off` dans les réglages | réussi : sortie vide |
-| Script d'installation : contenu existant préservé, réinstallation sans doublon, réglage durable conservé, désinstallation qui restitue le fichier d'origine, refus si marqueurs incomplets | réussi |
-| `find_skills.py` sur le catalogue réel (570 fichiers SKILL.md) | réussi |
+| Série | Contenu | Résultat |
+|---|---|---|
+| Hook | 28 messages : commandes, négations (« pas besoin du mode choix », « sans l'activer »), anglais, chemins trompeurs ; désactivation ; entrée vide ; taille ; trois shells | réussi |
+| `find_skills.py` | catalogue fabriqué : accents, descriptions repliées, guillemets échappés, invocation manuelle, versions de plugin, skills de projet | réussi |
+| `audit_skill.py` | 24 cas : skills sains, injections, caractères invisibles, `curl \| sh`, clés SSH, base64 exécuté, configuration de Claude, marqueur d'évasion, lien sortant, binaire, fichiers manquants, syntaxe, faux positifs connus | réussi |
+| Installation | ajout, conservation du contenu, sauvegarde, réinstallation sans doublon, préférence conservée, désinstallation qui restitue l'original, refus sur marqueurs incomplets | réussi |
+| Intégrité | `SHA256SUMS` du plugin et des archives ; une modification d'un caractère est détectée | réussi |
+| Manifestes | `claude plugin validate --strict` (plugin et marketplace) | réussi |
 
-## Scénarios de comportement
+## Scénarios de comportement : troisième passage (version finale)
 
-Deuxième passage, après corrections (voir plus bas) : 11 scénarios sur 11 réussis avec chaque modèle. Les flux complets ne sont pas versionnés ; les résumés sont dans `results/opus/summary.json` et `results/sonnet/summary.json`.
+25 scénarios par modèle, puis un passage de non-régression de 7 scénarios sur la version finale du skill. Les flux complets ne sont pas versionnés ; les résumés sont dans `results/opus/summary.json` et `results/sonnet/summary.json`.
 
-| Scénario | Opus 5.5 | Sonnet 5.5 | Observé |
+| Scénario | Ce qui est vérifié | Opus 5.5 | Sonnet 5.5 |
 |---|---|---|---|
-| `auto-pertinent` : rapport Word | réussi | réussi | `docx` chargé, annonce « Skills retenus : `docx` (...) », fichier créé sans demande de validation |
-| `simple-sans-skill` : « Combien font 17 × 23 ? » | réussi | réussi | réponse directe, aucun skill, aucune annonce |
-| `mode-choix-attente` : présentation PowerPoint | réussi | réussi | trois options concurrentes, recommandation, question, aucun fichier produit |
-| `mode-choix-autre-formulation` : « Propose-moi plusieurs skills... » | réussi | réussi | idem, avec distinction concurrentes et complémentaires |
-| `aucun-skill` : « N'utilise aucun skill » | réussi | réussi | aucun skill chargé |
-| `internet-desactive` : besoin BPMN non couvert | réussi | réussi | aucune recherche Web, limite signalée, activation proposée |
-| `skill-nouveau-reconnu` : skill créé en cours de session | réussi | réussi | skill chargé et appliqué dans la même session ; le premier appel peut répondre « Unknown skill » pendant quelques secondes, le second réussit |
-| `persistance-nouvelle-session` | réussi | réussi | hook exécuté, réglages par défaut énoncés correctement, skill listé au démarrage |
-| `mode-choix-internet` : BPMN avec Internet | réussi | réussi | catalogue du compte puis Web, candidats avec source et licence, aucune installation avant le choix |
-| `preference-durable` : « Enregistre le mode choix comme réglage durable » | réussi | réussi | seule la ligne « Réglages durables » change, au format attendu ; le reste du fichier est intact |
-| `rapport-skills` : classeur Excel, puis « Quels skills as-tu utilisés et pourquoi ? » | réussi | réussi | rapport exact : `xlsx` cité avec son apport, aucun skill non chargé n'est mentionné |
+| `auto-pertinent` | rapport Word : `docx` chargé, annonce en une ligne, fichier produit sans validation | réussi | réussi |
+| `simple-sans-skill` | « 17 × 23 » : réponse directe, aucun skill | réussi | réussi |
+| `mot-cle-trompeur` | question sur le format .docx : le skill `docx` n'est pas chargé | réussi | réussi |
+| `combinaison-complementaire` | rapport Word avec graphique : `docx` + `dataviz`, au plus 3 skills, au plus 3 recherches de catalogue | réussi | réussi |
+| `reevaluation-etape` | texte sans skill, puis ajout de `docx` quand un fichier Word est demandé | réussi | réussi |
+| `aucun-skill` | « N'utilise aucun skill » respecté | réussi | réussi |
+| `skill-explicite` | « Utilise le skill pptx » respecté | réussi | réussi |
+| `skill-inexistant` | skill inconnu : le dire et proposer le plus proche | réussi | réussi |
+| `demande-en-anglais` | même procédure en anglais | réussi | réussi |
+| `mode-choix-attente` | trois options au plus, recommandation, attente, aucun fichier | réussi | réussi |
+| `mode-choix-autre-formulation` | « Propose-moi plusieurs skills » | réussi | réussi |
+| `choix-puis-reponse` | rien avant la réponse, puis exécution avec l'option choisie | réussi | réussi |
+| `choix-reponse-ambigue` | « Hmm, je ne sais pas trop » ne vaut pas accord | réussi | réussi |
+| `portee-tache` | le mode choix d'une tâche ne déborde pas sur la suivante | réussi | réussi |
+| `question-sur-le-mode` | une question sur le mode choix ne l'active pas | réussi | réussi |
+| `internet-desactive` | aucune recherche Web par défaut | réussi | réussi |
+| `uniquement-installes` | « Utilise uniquement mes skills installés » + « trouve » : aucune recherche Web, outil Web pourtant autorisé | réussi | réussi |
+| `mode-choix-internet` | candidats externes avec source et licence, aucune installation avant le choix | réussi | réussi |
+| `auto-internet-installation` | permissions limitées : skill officiel trouvé et vérifié, puis arrêt transparent devant le refus de copie, avec la commande exacte à lancer | réussi | réussi |
+| `auto-internet-installation-autorisee` | permissions élargies : téléchargement, audit, installation dans le projet, `SOURCE.md`, rapport (source, commit, emplacement) | réussi (installé ; `/reload-skills` demandé honnêtement) | réussi (arrêt transparent : Claude Code exige une validation manuelle de `cp -r` vers `.claude/`) |
+| `skill-nouveau-reconnu` | skill créé en cours de session, chargé et appliqué | réussi | réussi |
+| `persistance-nouvelle-session` | session neuve : hook exécuté, réglages par défaut connus | réussi | réussi |
+| `preference-durable` | seule la ligne « Réglages durables » change, au format attendu | réussi | réussi |
+| `rapport-skills` | « Quels skills as-tu utilisés et pourquoi ? » : rapport exact | réussi | réussi |
+| `audit-a-la-demande` | « Vérifie que mon skill gepeto est fonctionnel et non piraté » : audit lancé, alertes lues en contexte | réussi | réussi |
 
-## Corrections apportées pendant les tests
+## Corrections apportées au fil des passages
 
-1. **Options proposées sur le seul nom (défaut réel, Sonnet, premier passage).** Dans deux cas, Sonnet a présenté des skills dont il n'avait lu que le nom (« Je n'ai que les noms de ces skills »), parce que la liste de Claude Code ne montre plus les descriptions au-delà de son budget. Correction : le skill et les instructions exigent désormais de lire la description de chaque candidat avant de le proposer, et un critère de test le contrôle. Au deuxième passage, Sonnet a utilisé `SearchSkills` et a lu les descriptions.
-2. **Agrégateurs de skills.** Un passage avec Internet a cité des annuaires plutôt que les dépôts sources. `references/internet.md` demande maintenant de remonter au dépôt source.
-3. **Format de la préférence durable.** Au premier essai, les deux modèles ont écrit « sélection = mode choix » au lieu de « sélection = choix ». Le sens était juste, mais le format variait. Les valeurs possibles sont maintenant écrites dans le bloc et dans le skill, et le skill indique de modifier le fichier CLAUDE.md qui contient le bloc. Au deuxième essai, la ligne était exacte avec les deux modèles.
-4. **Critères de test trop stricts.** Les premiers critères exigeaient que la dernière ligne soit une question et que les options soient numérotées. Les réponses correctes en tableau, avec des lettres ou suivies d'une liste de sources, échouaient à tort. Les critères ont été assouplis sans changer le comportement attendu.
+1. **Options proposées sur le seul nom** (Sonnet, premier passage). La liste de Claude Code ne montre plus les descriptions au-delà de son budget. Le skill et les instructions exigent maintenant de lire la description de chaque candidat. Corrigé dès le deuxième passage.
+2. **Format de la préférence durable** (les deux modèles). Les valeurs possibles sont maintenant écrites dans le bloc et dans le skill.
+3. **Skill inexistant** (Sonnet). Il disait que le skill n'existait pas sans proposer d'alternative. Le skill demande maintenant une recherche par nom approché et la proposition du skill existant le plus proche.
+4. **Informations sans choix** (Opus). Il laissait entendre qu'envoyer des informations suffirait à démarrer. Le skill précise qu'une réponse sans option désignée ne vaut pas choix.
+5. **Annonce** (Sonnet). `skill-orchestrator` était cité parmi les skills retenus ; ce n'est plus le cas.
+6. **Refus de permission contourné** (Sonnet, installation depuis Internet). Une copie refusée avait été refaite avec un autre outil. `references/internet.md` interdit maintenant ce contournement et demande une trace de provenance (`SOURCE.md`).
+7. **Hook** : négations et questions sur le mode choix ne déclenchent plus l'indice « mode choix demandé » ; ajout de l'indice « contrôle de skills » ; reconnaissance de « use the X skill ».
+8. **Audit intégré** : `audit_skill.py` remplace la dépendance au skill tiers `skill-security-auditor`, qui ignore les lignes marquées `# noqa: SEC-AUDITOR` (une porte d'évasion pour un skill malveillant).
+9. **Critères de test** : plusieurs critères étaient trop stricts (dernière ligne exactement interrogative, options numérotées seulement, mot-clé présent dans une commande de recherche). Ils ont été corrigés après lecture des réponses, sans changer le comportement attendu, et chaque correction a été revérifiée sur les anciennes réponses.
 
-## Limites des tests
+## Installation depuis Internet : ce que montrent les passages
 
-- Les tests tournent dans Claude Code, pas dans Cowork : le comportement dans Cowork, et en particulier l'exécution du hook `UserPromptSubmit`, reste à vérifier à la main (voir le README).
-- Le bloc d'instructions était dans le `CLAUDE.md` du projet de test, pas dans `~/.claude/CLAUDE.md`. Les deux sont chargés de la même façon, mais l'installation sur ta machine reste à faire.
-- Dans le scénario Internet, `git clone` et `gh` étaient refusés par la configuration du test, et GitHub a renvoyé une erreur 403 à la lecture directe des pages. L'examen complet d'un candidat avant installation n'a donc pas pu aller jusqu'au bout. Aucune installation depuis Internet n'a été testée : le scénario de reconnaissance porte sur un skill créé localement.
-- Les neuf premiers scénarios ont tourné avant l'ajout de la ligne des valeurs possibles et de la précision sur le fichier à modifier. Ces deux changements ne concernent que les préférences durables, testées ensuite.
-- Un passage par modèle et par scénario : les modèles ne sont pas déterministes, d'autres formulations peuvent donner d'autres résultats.
+- Deuxième passage : les deux modèles ont installé un skill BPMN, avec source, commit et emplacement. Sonnet avait toutefois contourné un refus de copie en recréant les fichiers avec un autre outil.
+- Après l'ajout de la règle « un refus de permission ne se contourne pas », les deux modèles s'arrêtent devant un refus, donnent la commande exacte, et n'annoncent jamais un skill comme installé à tort. Avec des permissions élargies, Opus installe le skill officiel `camunda-bpmn` (Apache 2.0, commit `38462e3`) après l'avoir audité.
+- Claude Code peut exiger ta validation pour certaines copies vers `.claude/`, même quand une règle les autorise. En usage réel, tu approuves la commande dans l'interface ; `claude -p` ne peut pas simuler cette approbation.
+
+## Limites
+
+- Les tests tournent dans Claude Code, pas dans Cowork : le comportement dans Cowork, dont l'exécution du hook, reste à vérifier à la main (README).
+- Le bloc d'instructions était dans le `CLAUDE.md` du projet de test. Claude Code charge ce fichier comme `~/.claude/CLAUDE.md`, mais l'installation sur ta machine reste à faire.
+- LibreOffice ne fonctionne pas dans ce conteneur : le recalcul des formules par le skill `xlsx` échoue ou expire. Les fichiers sont produits, leur recalcul n'est pas vérifié.
+- Un passage par modèle et par scénario : les modèles ne sont pas déterministes.

@@ -15,7 +15,7 @@ La procédure détaillée est dans le skill `skill-orchestrator` : lis-le à la 
 
 - « Mode choix », « Propose-moi plusieurs skills », « Je veux choisir les skills » : présente au plus trois options dont tu as lu la description (apport, avantages, limites, différences), recommande, puis attends mon choix. Mon silence ne vaut pas accord.
 - Option Internet (« Cherche un skill sur Internet si nécessaire », « Trouve et installe un skill adapté ») : désactivée par défaut. Sans activation, aucune recherche ni installation de skill externe.
-- Autres pilotages : « Mode automatique », « Désactive la recherche Internet », « Utilise uniquement mes skills installés », « Utilise le skill [nom] », « N'utilise aucun skill », « Quels skills as-tu utilisés et pourquoi ? ».
+- Autres pilotages : « Mode automatique », « Désactive la recherche Internet », « Utilise uniquement mes skills installés », « Utilise le skill [nom] », « N'utilise aucun skill », « Quels skills as-tu utilisés et pourquoi ? », « Vérifie mes skills » (audit de fonctionnement et de sécurité).
 
 Un réglage demandé pour une tâche ne vaut que pour cette tâche. Modifie la ligne « Réglages durables » seulement si je demande explicitement d'enregistrer une préférence. Mes demandes explicites, les règles de l'environnement et les restrictions d'invocation des skills priment sur cette procédure.
 <!-- skill-orchestrator:end -->

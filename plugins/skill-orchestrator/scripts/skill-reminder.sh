@@ -35,7 +35,10 @@ add_hint() {
 - $1"
 }
 
-if has "mode choix|propose[r]?[- ]moi (plusieurs|des|quelques) skills|je (veux|voudrais|souhaite) choisir (les |mes |le )?skills?|laisse[- ]moi choisir|choice mode|let me choose"; then
+# Questions sur le mode choix et négations : le message en parle sans le demander.
+if has "(pas besoin (du|de)|sans|n'active pas|ne (l')?active pas|pas de|pas en)[^.?!]{0,10}mode choix|(comment|pourquoi)[^?]{0,40}mode choix|mode choix[^.?!]{0,60}(sans l'activer|ne l'active pas)|(c'est quoi|qu'est-ce que)[^?]{0,30}mode choix|(how|what)[^?]{0,30}choice mode"; then
+  add_hint "le message parle du mode choix sans le demander : garde le mode en cours."
+elif has "mode choix|propose[r]?[- ]moi (plusieurs|des|quelques) skills|je (veux|voudrais|souhaite) choisir (les |mes |le )?skills?|laisse[- ]moi choisir|choice mode|let me choose"; then
   add_hint "mode choix demandé pour cette tâche : présente au plus trois options, recommande, puis attends le choix explicite."
 elif has "mode auto(matique)?"; then
   add_hint "retour au mode automatique pour cette tâche."
@@ -43,18 +46,24 @@ fi
 
 if has "d(e|é)sactive[rz]? (la )?recherche (sur )?internet|sans (recherche )?internet|(uniquement|seulement) (avec )?(mes|les) skills install|only (my )?installed skills|no internet"; then
   add_hint "option Internet désactivée : aucune recherche ni installation de skill externe."
+elif has "pas besoin de (chercher|rechercher|trouver)|ne (cherche|recherche) pas|sans (chercher|rechercher)|n'active pas la recherche"; then
+  :
 elif has "(cherche|trouve|recherche)[^.?!]{0,50}skills?[^.?!]{0,50}(internet|en ligne|sur le web)|(^|[^a-z])active[rz]? la recherche internet|avec recherche internet|(trouve|cherche)[^.?!]{0,20} et installe|installe[rz]?[^.?!]{0,30}skills?[^.?!]{0,30}(internet|en ligne|adapt)|(search|look) (the )?(web|internet|online) for (a )?skill|find and install"; then
   add_hint "option Internet activée pour cette tâche : suis references/internet.md du skill skill-orchestrator."
 fi
 
 if has "n('|’|e )?utilise (aucun|pas de) skills?|sans (aucun )?skills?([^a-z]|$)|don'?t use (any )?skills?"; then
   add_hint "aucun skill pour cette tâche."
-elif has "utilise (le|les|uniquement le) skills? [a-z0-9]"; then
+elif has "utilise (le|les|uniquement le) skills? [a-z0-9]|use (the |only the )?[a-z0-9:-]+ skill|use (the )?skills? [a-z0-9]"; then
   add_hint "skill demandé explicitement : utilise-le s'il existe et peut être invoqué."
 fi
 
 if has "quels? skills? (as[- ]tu|avez[- ]vous|tu as) (utilis|employ)|which skills (did|have) you use"; then
   add_hint "rapport demandé : liste les skills réellement chargés, leur étape et leur apport."
+fi
+
+if has "(v(é|e)rifie|audite|contr(ô|o)le|scanne)[^.?!]{0,40}skills?|skills?[^.?!]{0,30}(pirat|compromis|malveillant|dangereu|fonctionnel)|(audit|check|scan)[^.?!]{0,30}skills?"; then
+  add_hint "contrôle de skills demandé : utilise scripts/audit_skill.py du skill skill-orchestrator et lis les alertes en contexte."
 fi
 
 if has "(enregistre|m(é|e)morise|garde|retiens)[^.?!]{0,40}(r(é|e)glage|pr(é|e)f(é|e)rence|par d(é|e)faut)|par d(é|e)faut d(é|e)sormais|d(é|e)sormais par d(é|e)faut"; then
